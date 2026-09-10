@@ -1,0 +1,172 @@
+// Blood Donation & Emergency Platform — Prisma Schema
+// B7A6 Backend Assignment
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- ENUMS ----------
+
+enum Role {
+  ADMIN
+  DONOR
+  REQUESTER
+}
+
+enum BloodGroup {
+  A_POS
+  A_NEG
+  B_POS
+  B_NEG
+  AB_POS
+  AB_NEG
+  O_POS
+  O_NEG
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RequestStatus {
+  PENDING
+  MATCHED
+  FULFILLED
+  EXPIRED
+  CANCELLED
+}
+
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PaymentPurpose {
+  PRIORITY_LISTING
+  DONATION_CERTIFICATE
+  SERVICE_FEE
+}
+
+// ---------- MODELS ----------
+
+model User {
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  password        String?    // nullable for social-login-only accounts
+  googleId        String?    @unique
+  phone           String?
+  role            Role       @default(REQUESTER)
+  bloodGroup      BloodGroup?
+  isAvailable     Boolean    @default(true) // donor availability toggle
+  lastDonationAt  DateTime?
+  isVerified      Boolean    @default(false)
+  city            String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  bloodRequests   BloodRequest[]   @relation("RequesterRequests")
+  donationMatches DonationMatch[]  @relation("DonorMatches")
+  donations       Donation[]
+  payments        Payment[]
+
+  @@index([role])
+  @@index([bloodGroup, city])
+}
+
+model BloodRequest {
+  id            String        @id @default(uuid())
+  requesterId   String
+  requester     User          @relation("RequesterRequests", fields: [requesterId], references: [id])
+  patientName   String
+  bloodGroup    BloodGroup
+  unitsNeeded   Int
+  hospitalName  String
+  city          String
+  urgency       UrgencyLevel  @default(MEDIUM)
+  requiredBy    DateTime
+  status        RequestStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  matches       DonationMatch[]
+  donations     Donation[]
+  payments      Payment[]
+
+  @@index([status])
+  @@index([bloodGroup, city, status])
+}
+
+model DonationMatch {
+  id            String      @id @default(uuid())
+  requestId     String
+  request       BloodRequest @relation(fields: [requestId], references: [id])
+  donorId       String
+  donor         User        @relation("DonorMatches", fields: [donorId], references: [id])
+  status        MatchStatus @default(PENDING)
+  respondedAt   DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@unique([requestId, donorId])
+  @@index([status])
+}
+
+model Donation {
+  id            String   @id @default(uuid())
+  donorId       String
+  donor         User     @relation(fields: [donorId], references: [id])
+  requestId     String?
+  request       BloodRequest? @relation(fields: [requestId], references: [id])
+  unitsDonated  Int      @default(1)
+  donatedAt     DateTime @default(now())
+  location      String?
+
+  @@index([donorId])
+}
+
+model BloodBankInventory {
+  id            String     @id @default(uuid())
+  bankName      String
+  city          String
+  bloodGroup    BloodGroup
+  unitsAvailable Int       @default(0)
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([bankName, bloodGroup])
+  @@index([city, bloodGroup])
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  requestId     String?
+  request       BloodRequest? @relation(fields: [requestId], references: [id])
+  amount        Float
+  currency      String        @default("BDT")
+  purpose       PaymentPurpose
+  status        PaymentStatus @default(PENDING)
+  provider      String        // stripe | sslcommerz | bkash
+  transactionId String?       @unique
+  createdAt     DateTime      @default(now())
+
+  @@index([status])
+}
