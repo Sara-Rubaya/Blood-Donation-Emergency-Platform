@@ -41,6 +41,33 @@ npx prisma migrate dev --name init
 npm run dev
 ```
 
+## Build & Deploy (Vercel)
+
+```bash
+npm run build      # bundles src/server.ts -> dist/server.js via tsup
+npm i -g vercel
+vercel login
+vercel --prod       # reads vercel.json, deploys dist/server.js as a serverless function
+```
+
+After the first deploy, add your `.env` values in the Vercel dashboard
+(Project → Settings → Environment Variables) — `vercel --prod` does **not**
+upload your local `.env` file.
+
+### Serverless constraints (Vercel free tier)
+
+Functions here are stateless and spin down between requests, so avoid:
+
+| Don't use | Why | Instead |
+|---|---|---|
+| `node-cron` / `setInterval` for scheduled tasks (e.g. auto-expiring old requests) | Instance halts when idle | Vercel Cron Jobs / GitHub Actions calling an endpoint |
+| Local `fs` writes (e.g. saving uploaded donor ID photos to disk) | Disk is read-only/ephemeral | Upload to Cloudinary/S3 via signed URL, store the URL in Postgres |
+| In-memory caching/state | Not shared across instances | Redis (Upstash) or just query Postgres |
+| Socket.io / persistent WebSocket connections for live emergency alerts | Not supported on serverless functions | Pusher/Ably, or client-side polling `/api/blood-requests` |
+
+None of the current modules hit these, but keep them in mind if you add
+donor ID photo uploads or real-time emergency broadcast later.
+
 ## Role model
 
 - **ADMIN** — manages blood bank inventory, verifies users, can override any request/match status.
