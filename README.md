@@ -46,3 +46,13 @@ npm run dev
 - **ADMIN** — manages blood bank inventory, verifies users, can override any request/match status.
 - **DONOR** — browses open requests, volunteers, views own donation history.
 - **REQUESTER** — creates blood requests, accepts/rejects donor matches, pays for priority listing.
+
+## Postman / API testing
+
+Import the routes below into Postman as a collection, or use `curl`:
+
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Rifat Hasan","email":"rifat@example.com","password":"password123","role":"DONOR","bloodGroup":"O_POS"}'
+```
