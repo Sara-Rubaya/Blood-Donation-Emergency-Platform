@@ -43,16 +43,25 @@ npm run dev
 
 ## Build & Deploy (Vercel)
 
+Vercel detects `api/index.ts` automatically as a serverless function — it
+exports the Express `app` (no `app.listen()` there). `src/server.ts` with
+`app.listen()` is only used for local development (`npm run dev`); it is
+never deployed.
+
 ```bash
-npm run build      # bundles src/server.ts -> dist/server.js via tsup
 npm i -g vercel
 vercel login
-vercel --prod       # reads vercel.json, deploys dist/server.js as a serverless function
+vercel --prod       # picks up api/index.ts + vercel.json rewrites automatically
 ```
 
 After the first deploy, add your `.env` values in the Vercel dashboard
 (Project → Settings → Environment Variables) — `vercel --prod` does **not**
 upload your local `.env` file.
+
+If you still get a `404: NOT_FOUND` after deploying:
+- Confirm `api/index.ts` exists and exports the app as `export default app;`
+- Check the Vercel deployment's "Functions" tab — `api/index` should be listed
+- Make sure you didn't leave an old `builds`/`routes` block in `vercel.json` pointing at `dist/server.js` (that file is never uploaded, since `dist/` is gitignored)
 
 ### Serverless constraints (Vercel free tier)
 
