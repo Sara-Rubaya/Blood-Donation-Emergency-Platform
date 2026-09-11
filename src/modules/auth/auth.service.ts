@@ -1,15 +1,18 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "../../config/db";
 import { ApiError } from "../../utils/ApiError";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const JWT_SECRET = process.env.JWT_SECRET as string;
+// Cast to SignOptions["expiresIn"] — newer @types/jsonwebtoken wants a
+// number or a branded "StringValue" template type, not a plain string.
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as SignOptions["expiresIn"];
+
 const signToken = (id: string, role: string) =>
-  jwt.sign({ id, role }, process.env.JWT_SECRET as string, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  });
+  jwt.sign({ id, role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
 export const registerUser = async (payload: {
   name: string;
