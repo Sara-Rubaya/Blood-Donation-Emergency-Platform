@@ -4,13 +4,14 @@
   "description": "Blood Donation & Emergency Platform - B7A6 Backend Assignment",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsup",
-    "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts"
-  },
+  "dev": "tsx watch src/server.ts",
+  "build": "tsup",
+  "start": "node dist/server.js",
+  "postinstall": "prisma generate",
+  "prisma:generate": "prisma generate",
+  "prisma:migrate": "prisma migrate dev",
+  "prisma:seed": "tsx prisma/seed.ts"
+},
   "dependencies": {
     "@prisma/client": "^5.19.0",
     "bcryptjs": "^2.4.3",
