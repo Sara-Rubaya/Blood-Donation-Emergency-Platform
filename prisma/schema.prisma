@@ -8,7 +8,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")   // Neon pooled (-pooler) URL, runtime
+  directUrl = env("DIRECT_URL")     // Neon direct URL, prisma migrate
 }
 
 // ---------- ENUMS ----------

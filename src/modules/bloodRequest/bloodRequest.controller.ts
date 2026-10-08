@@ -21,7 +21,7 @@ export const getRequest = catchAsync(async (req: AuthRequest, res: Response) => 
 });
 
 export const updateStatus = catchAsync(async (req: AuthRequest, res: Response) => {
-  const request = await service.updateRequestStatus(req.params.id, req.body.status);
+  const request = await service.updateRequestStatus(req.params.id, req.body.status, req.user!);
   res.status(200).json(ApiResponse.success("Request status updated", request));
 });
 
@@ -31,6 +31,6 @@ export const volunteer = catchAsync(async (req: AuthRequest, res: Response) => {
 });
 
 export const respondToMatch = catchAsync(async (req: AuthRequest, res: Response) => {
-  const match = await service.respondToMatch(req.params.matchId, req.body.status);
+  const match = await service.respondToMatch(req.params.matchId, req.body.status, req.user!);
   res.status(200).json(ApiResponse.success("Match updated", match));
 });

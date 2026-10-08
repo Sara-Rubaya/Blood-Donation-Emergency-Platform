@@ -1,0 +1,147 @@
+{
+  "info": {
+    "name": "Blood Donation & Emergency Platform API",
+    "description": "B7A6 Backend Assignment — auth, blood requests, donor matching",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "requestId", "value": "" },
+    { "key": "matchId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rifat Hasan\",\n  \"email\": \"rifat@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"DONOR\",\n  \"bloodGroup\": \"O_POS\",\n  \"phone\": \"01712345678\",\n  \"city\": \"Dhaka\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rifat@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/google",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"<google_id_token>\",\n  \"role\": \"DONOR\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blood Requests",
+      "item": [
+        {
+          "name": "List Requests",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/blood-requests?bloodGroup=O_POS&city=Dhaka&status=PENDING",
+              "query": [
+                { "key": "bloodGroup", "value": "O_POS" },
+                { "key": "city", "value": "Dhaka" },
+                { "key": "status", "value": "PENDING" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Request By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/blood-requests/{{requestId}}"
+          }
+        },
+        {
+          "name": "Create Request (Requester)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/blood-requests",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientName\": \"Karim Ahmed\",\n  \"bloodGroup\": \"O_POS\",\n  \"unitsNeeded\": 2,\n  \"hospitalName\": \"Dhaka Medical College Hospital\",\n  \"city\": \"Dhaka\",\n  \"urgency\": \"HIGH\",\n  \"requiredBy\": \"2026-09-20T00:00:00.000Z\",\n  \"notes\": \"Emergency surgery tomorrow\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Request Status (Requester/Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/blood-requests/{{requestId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Volunteer For Request (Donor)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/blood-requests/{{requestId}}/volunteer"
+          }
+        },
+        {
+          "name": "Respond To Match (Requester/Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/blood-requests/matches/{{matchId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACCEPTED\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

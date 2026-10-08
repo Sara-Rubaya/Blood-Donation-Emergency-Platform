@@ -14,7 +14,11 @@ export const listRequests = (filters: { bloodGroup?: string; city?: string; stat
       status: filters.status as any,
     },
     orderBy: { createdAt: "desc" },
-    include: { requester: { select: { id: true, name: true, phone: true } } },
+    include: {
+      requester: { select: { id: true, name: true, phone: true } },
+      // dashboard needs the donor + match id to accept / reject / complete
+      matches: { include: { donor: { select: { id: true, name: true, phone: true } } } },
+    },
   });
 
 export const getRequestById = async (id: string) => {
@@ -27,9 +31,13 @@ export const getRequestById = async (id: string) => {
 };
 
 // Requester or Admin updates the request's overall status
-export const updateRequestStatus = async (id: string, status: string) => {
+type Actor = { id: string; role: string };
+
+export const updateRequestStatus = async (id: string, status: string, actor: Actor) => {
   const request = await prisma.bloodRequest.findUnique({ where: { id } });
   if (!request) throw new ApiError(404, "Blood request not found");
+  if (actor.role !== "ADMIN" && request.requesterId !== actor.id)
+    throw new ApiError(403, "You can only update your own requests");
 
   return prisma.bloodRequest.update({ where: { id }, data: { status: status as any } });
 };
@@ -53,15 +61,29 @@ export const volunteerForRequest = async (requestId: string, donorId: string) =>
 };
 
 // Requester/Admin accepts or rejects a donor's match; COMPLETED logs the donation
-export const respondToMatch = async (matchId: string, status: "ACCEPTED" | "REJECTED" | "COMPLETED") => {
-  const match = await prisma.donationMatch.findUnique({ where: { id: matchId } });
+export const respondToMatch = async (
+  matchId: string,
+  status: "ACCEPTED" | "REJECTED" | "COMPLETED",
+  actor: Actor
+) => {
+  const match = await prisma.donationMatch.findUnique({
+    where: { id: matchId },
+    include: { request: true },
+  });
   if (!match) throw new ApiError(404, "Match not found");
+  if (actor.role !== "ADMIN" && match.request.requesterId !== actor.id)
+    throw new ApiError(403, "You can only manage matches on your own requests");
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.donationMatch.update({
       where: { id: matchId },
       data: { status, respondedAt: new Date() },
     });
+
+    // Re-open the request so another donor can volunteer
+    if (status === "REJECTED") {
+      await tx.bloodRequest.update({ where: { id: match.requestId }, data: { status: "PENDING" } });
+    }
 
     if (status === "COMPLETED") {
       await tx.donation.create({

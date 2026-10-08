@@ -6,7 +6,9 @@ import { ApiResponse } from "../utils/ApiResponse";
 export const validate =
   (schema: AnyZodObject) => (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse({ body: req.body, params: req.params, query: req.query });
+      const parsed = schema.parse({ body: req.body, params: req.params, query: req.query });
+      // Replace body with the parsed result so unknown keys (isVerified, status...) are stripped
+      if (parsed.body !== undefined) req.body = parsed.body;
       next();
     } catch (err) {
       if (err instanceof ZodError) {
